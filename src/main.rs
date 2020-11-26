@@ -18,7 +18,8 @@ struct Gophermap {
 
 struct Config {
 	hostname: String,
-	port: i16
+	port: i16,
+	dir: String
 }
 
 fn main() -> std::io::Result<()> {
@@ -37,17 +38,24 @@ fn main() -> std::io::Result<()> {
 			.long("port")
 			.takes_value(true)
 			.help("Port number to listen on"))
+		.arg(Arg::with_name("dir")
+			.short("d")
+			.long("dir")
+			.takes_value(true)
+			.help("path to gopher content"))
 		.get_matches();
 
 	let hostname = matches.value_of("hostname").unwrap_or("localhost");
 	let port :i16 = matches.value_of("port").unwrap_or("70").parse().unwrap();
+	let dir = matches.value_of("dir").unwrap_or("root");
 	println!("Listening on 0.0.0.0 and port {} as {}", port, hostname);
 
 	let bind_addr = format!("0.0.0.0:{}", port);
 
 	let config = Config {
 		hostname: hostname.to_string(),
-		port: port
+		port: port,
+		dir: dir.to_string()
 	};
 
 	let listener = TcpListener::bind(bind_addr).unwrap();
@@ -98,7 +106,7 @@ fn read_gophermap(path: &Path, config: &Config) -> Vec<Gophermap>{
  			// println!("{:?}",parts);
  			label = parts[0].to_string();
  			p = parts[1];
- 			
+
  			s = &config.hostname;
 
  		} else if l.starts_with("1") {
@@ -127,9 +135,9 @@ fn read_gophermap(path: &Path, config: &Config) -> Vec<Gophermap>{
 
 fn handle_v1(mut stream: TcpStream, request: &str, config: &Config) -> std::io::Result<()> {
 	let mut dir = env::current_dir().unwrap();
-	// println!("CWD {}", dir.to_str().unwrap());
 
-	dir.push("root");
+	dir.push(&config.dir);
+	// println!("{}", dir.to_str().unwrap());
 	let mut request_path = Path::new(request);
 	if request.starts_with("/") {
 		request_path = request_path.strip_prefix("/").unwrap();
@@ -162,7 +170,7 @@ fn handle_v1(mut stream: TcpStream, request: &str, config: &Config) -> std::io::
 
 fn handle_plus(mut stream: TcpStream, request: &str, config: &Config) -> std::io::Result<()> {
 	let mut dir = env::current_dir().unwrap();
-	dir.push("root");
+	dir.push(&config.dir);
 
 	let parts: Vec<&str> = request.split('\t').collect();
 	// println!("root dir {}", dir.to_str().unwrap());
