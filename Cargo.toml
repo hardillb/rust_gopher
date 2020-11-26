@@ -1,5 +1,5 @@
 [package]
-name = "gopher"
+name = "rust_gopher"
 version = "0.1.0"
 authors = ["Ben Hardill <hardillb@gmail.com"]
 edition = "2018"
